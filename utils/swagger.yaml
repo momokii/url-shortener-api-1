@@ -1,0 +1,1048 @@
+openapi: 3.0.0
+info:
+  version: '1.0'
+  title: Shorter Link API 
+  description: Adios!
+  contact:
+    name: Kelana Chandra Helyandika
+    url: https://kelanach.cyclic.app/
+    email: kelanachandra7@gmail.com
+servers:
+  - url: http://localhost:8086
+    description: Node Local Server
+
+tags:
+  - name: Auth
+    description: Authentication related operations
+  - name: User
+    description: User related operations
+  - name: Url 
+    description: Url related operations
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+
+  schemas:
+    InternalServerError:
+      description: Internal Server Error
+      content:
+        application/json:
+          schema: 
+            type: object 
+            properties: 
+              errors: 
+                type: booelan 
+                example: true
+              message: 
+                type: string 
+                example: Internal Server Error
+
+    AccountNotHaveAccess:
+      description: Account Doesn't Have Access
+      content:
+        application/json:
+          schema: 
+            type: object 
+            properties: 
+              errors: 
+                type: boolean 
+                example: true
+              message: 
+                type: string 
+                example: Account Doesn't Have Access
+
+    DataNotFound:
+      description: Data Not Found
+      content:
+        application/json:
+          schema: 
+            type: object 
+            properties:
+              errors: 
+                type: boolean
+                example: true
+              message: 
+                type: string 
+                example: Data Not Found
+
+    DataInputNotValid:
+      description: Input Not Valid
+      content:
+        application/json:
+          schema:
+            type: object
+            properties:
+              errors:
+                type: boolean
+                example: true
+              message:
+                type: string
+                example: Data not valid
+
+
+paths:
+# ! ------------------------ ---- ------------------------ ! #
+# ! ------------------------ AUTH ------------------------ ! #
+# ! ------------------------ ---- ------------------------ ! #
+  /login:
+    post:
+      summary: Login for user 
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+      responses:
+        '200':
+          description: Success login 
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Success Login
+                  data: 
+                    type: object
+                    properties:
+                      token:
+                        type: string 
+                      token_type:
+                        type: string
+                        example: JWT 
+                      expires_in:
+                        type: integer
+                        example: 3600
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+  /signup:
+    post:
+      summary: Create new user
+      tags:
+        - Auth
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                password_confirmation:
+                  type: string
+                name:
+                  type: string
+                is_by_admin:
+                  type: boolean 
+                  default: false
+      responses:
+        '200':
+          description: Success create new account
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Success create new account
+                  data: 
+                    type: object
+                    properties:
+                      username:
+                        type: string 
+                      name:
+                        type: string
+                      created_at:
+                        type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+# ! ------------------------ ---- ------------------------ ! #
+# ! ------------------------ USERS ------------------------ ! #
+# ! ------------------------ ---- ------------------------ ! #
+  /users:
+    get:
+      summary: Get data users (admin only)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          required: false
+          description: Page number
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+          required: false
+          description: Limit data per page
+        - in: query
+          name: sort
+          schema:
+            type: string
+          required: false
+          description: Sorting data by (created_at_newest, created_at_oldest, login_at_newest, login_at_oldest)
+        - in: query
+          name: is_member
+          schema:
+            type: integer
+          required: false
+          description: Get only member user and set 1 for true 
+        - in: query
+          name: search
+          schema:
+            type: string
+          required: false
+          description: Search data by username or name
+        - in: query
+          name: user_type
+          schema:
+            type: integer
+          required: false
+          description: filter by user type (set 1 = admin || 2 = member)
+      responses:
+        '200':
+          description: Get users data
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: get users data
+                  data: 
+                    type: object
+                    properties:
+                      page:
+                        type: integer 
+                      per_page:
+                        type: integer
+                      total_data:
+                        type: integer
+                      users: 
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            username:
+                              type: string
+                            name:
+                              type: string
+                            user_type:
+                              type: integer
+                            is_member:
+                              type: integer
+                            created_at:
+                              type: string
+                            edited_at:
+                              type: string
+                            last_login:
+                              type: string
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+    post:
+      summary: Create new user by admin (is_by_admin = true & user_type = 1 for admin || 2 for normal user)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                username:
+                  type: string
+                password:
+                  type: string
+                password_confirmation:
+                  type: string
+                name:
+                  type: string
+                is_by_admin:
+                  type: boolean 
+                  default: true
+                user_type:
+                  type: integer
+      responses:
+        '200':
+          description: Success create new account
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Success create new account
+                  data: 
+                    type: object
+                    properties:
+                      username:
+                        type: string 
+                      name:
+                        type: string
+                      created_at:
+                        type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+  /users/self:
+    get:
+      summary: Get user data self info
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      responses:
+        '200':
+          description: get user self info
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: get user self info data
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: integer 
+                      username:
+                        type: string
+                      name:
+                        type: string
+                      user_type:
+                        type: integer 
+                      is_member:
+                        type: integer
+                      created_at:
+                        type: string
+                      edited_at:
+                        type: string
+                      last_login:
+                        type: string
+                      membership_history:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            user_id:
+                              type: integer
+                            start_date:
+                              type: string
+                            end_date:
+                              type: string
+                            is_active:
+                              type: integer 
+                            terminated_type:
+                              type: integer
+                            terminated_date:
+                              type: string
+                      links_data:
+                        type: array
+                        items:
+                          type: object 
+                          properties:
+                            id:
+                              type: integer
+                            short_url:
+                              type: string
+                            long_url:
+                              type: string
+                            created_at:
+                              type: string
+                            expired_at:
+                              type: string
+                            is_active:
+                              type: integer
+                            total_visited:
+                              type: integer
+                            last_visited:
+                              type: string
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+    patch:
+      summary: Edit user info
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                name:
+                  type: string
+                is_edit_info:
+                  type: boolean
+                  default: true
+      responses:
+        '200':
+          description: success update user info
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+  /users/self/password:  
+    patch:
+      summary: Edit user password (self)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                password_now:
+                  type: string
+                new_password:
+                  type: string
+                is_edit_info:
+                  type: boolean
+                  default: false
+      responses:
+        '200':
+          description: success change user password
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+  /users/{username}:
+    get:
+      summary: Get user data self info (admin only)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: path
+          name: username
+          schema:
+            type: string
+          required: true
+          description: Username of user
+      responses:
+        '200':
+          description: Get user data
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: Get user data
+                  data: 
+                    type: object
+                    properties:
+                      id:
+                        type: integer 
+                      username:
+                        type: string
+                      name:
+                        type: string
+                      user_type:
+                        type: integer 
+                      is_member:
+                        type: integer
+                      created_at:
+                        type: string
+                      edited_at:
+                        type: string
+                      last_login:
+                        type: string
+                      membership_history:
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            user_id:
+                              type: integer
+                            start_date:
+                              type: string
+                            end_date:
+                              type: string
+                            is_active:
+                              type: integer 
+                            terminated_type:
+                              type: integer
+                            terminated_date:
+                              type: string
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+  /users/members:
+    post:
+      summary: Create new member data (by admin or user itself)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: false
+        description: if req from user role, just send {} body req
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                is_admin:
+                  type: integer
+                user_id:
+                  type: integer
+      responses:
+        '200':
+          description: Success request
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                  data: 
+                    type: object
+                    properties:
+                      username:
+                        type: string 
+                      name:
+                        type: string
+                      created_at:
+                        type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+  /users/members/terminated:
+    post:
+      summary: Terminated member data (by admin)
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                user_id:
+                  type: integer
+      responses:
+        '200':
+          description: Success stop membership data
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                  data: 
+                    type: object
+                    properties:
+                      username:
+                        type: string 
+                      name:
+                        type: string
+                      created_at:
+                        type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+  /users/check-username:
+    get:
+      summary: check username availability for user
+      tags:
+        - User
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: username
+          schema:
+            type: string
+          required: true
+          description: Username of user need to check
+      responses:
+        '200':
+          description: Success request
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                  data: 
+                    type: object
+                    properties:
+                      available:
+                        type: boolean
+                      username:
+                        type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+# ! ------------------------ ---- ------------------------ ! #
+# ! ------------------------ URLS ------------------------ ! #
+# ! ------------------------ ---- ------------------------ ! #
+
+
+  /links/{short_url}:
+    get:
+      summary: get short link info and redirect to long link
+      tags:
+        - Url
+      parameters:
+        - in: path
+          name: short_url
+          schema:
+            type: string
+          required: true
+          description: Short url of link
+      responses:
+        '200':
+          description: success get short link
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: success get short link
+                  data: 
+                    type: object
+                    properties:
+                      short_url:
+                        type: string
+                      long_url:
+                        type: string
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+  /links:
+    get:
+      summary: get links data (admin only)
+      tags:
+        - Url 
+      security:
+        - bearerAuth: []
+      parameters:
+        - in: query
+          name: page
+          schema:
+            type: integer
+          required: false
+          description: Page number
+        - in: query
+          name: per_page
+          schema:
+            type: integer
+          required: false
+          description: Limit data per page
+        - in: query
+          name: sort
+          schema:
+            type: string
+          required: false
+          description: Sorting data by (created_at_newest, created_at_oldest, total_visited_desc, total_visited_asc, last_visited_newest, last_visited_oldest)
+        - in: query
+          name: search
+          schema:
+            type: string
+          required: false
+          description: Search data by short_url or long_url
+        - in: query
+          name: is_user
+          schema:
+            type: string
+          required: false
+          description: Search data by if the link created by auth user
+      responses:
+        '200':
+          description: success get links data
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: get links data
+                  data: 
+                    type: object
+                    properties:
+                      page:
+                        type: integer
+                      per_page:
+                        type: integer 
+                      total_data:
+                        type: integer 
+                      links: 
+                        type: array
+                        items:
+                          type: object
+                          properties:
+                            id:
+                              type: integer
+                            short_url:
+                              type: string
+                            long_url:
+                              type: string
+                            created_at:
+                              type: string
+                            expired_at:
+                              type: string
+                            is_active:
+                              type: integer
+                            total_visited:
+                              type: integer
+                            last_visited:
+                              type: string
+                            user_id: 
+                              type: integer
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+    post:
+      summary: Create new short link for non auth user
+      tags:
+        - Url
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                long_url:
+                  type: string
+      responses:
+        '200':
+          description: success create new short link
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: success create new short link
+                  data: 
+                    type: object
+                    properties:
+                      short_url:
+                        type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+    patch:
+      summary: Edit short link data for member user only
+      tags:
+        - Url
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_link:
+                  type: string
+                new_short_url:
+                  type: string
+      responses:
+        '200':
+          description: success edit short link data
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: success edit short link data
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+    delete:
+      summary: Delete short link data by user or admin
+      tags:
+        - Url
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                id_link:
+                  type: integer
+      responses:
+        '200':
+          description: Success delete short link data
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: success delete short link data 
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '404':
+          $ref: '#/components/schemas/DataNotFound'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
+
+
+
+
+
+  /users/links:
+    post:
+      summary: Create new short link for auth user
+      tags:
+        - Url
+      security:
+        - bearerAuth: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              type: object
+              properties:
+                long_url:
+                  type: string
+                is_custom:
+                  type: string 
+                  default: false
+                short_link:
+                  type: string
+      responses:
+        '200':
+          description: success create new short link
+          content:  
+            application/json:
+              schema:
+                type: object
+                properties:
+                  errors:
+                    type: boolean
+                    example: false
+                  message:
+                    type: string
+                    example: success create new short link
+                  data: 
+                    type: object
+                    properties:
+                      short_url:
+                        type: string
+        '400':
+          $ref: '#/components/schemas/DataInputNotValid'
+        '401':
+          $ref: '#/components/schemas/AccountNotHaveAccess'
+        '500':
+          $ref: '#/components/schemas/InternalServerError'
